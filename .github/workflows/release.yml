@@ -1,0 +1,109 @@
+name: release
+
+# Tag a release to build and publish it:
+#   git tag -a v1.0.0 -m "1.0.0" && git push origin v1.0.0
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check the tag matches the packaged version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          python - <<'PY'
+          import os, pathlib, re, sys
+          tag = os.environ["GITHUB_REF_NAME"].lstrip("v")
+          text = pathlib.Path("pyproject.toml").read_text()
+          version = re.search(r'^version = "([^"]+)"', text, re.M).group(1)
+          init = pathlib.Path("src/today_dashboard/__init__.py").read_text()
+          dunder = re.search(r'__version__ = "([^"]+)"', init).group(1)
+          problems = []
+          if tag != version:
+              problems.append(f"tag {tag} != pyproject version {version}")
+          if dunder != version:
+              problems.append(f"__version__ {dunder} != pyproject version {version}")
+          if problems:
+              sys.exit("; ".join(problems))
+          print(f"version {version} agrees across tag, pyproject and __init__")
+          PY
+
+      - name: Run the tests before shipping anything
+        run: python -m unittest discover -s tests -t tests
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --quiet build
+          python -m build
+
+      - name: Verify the wheel actually installs and runs
+        run: |
+          python -m venv /tmp/check
+          /tmp/check/bin/pip install --quiet dist/*.whl
+          cd /tmp
+          /tmp/check/bin/today --version
+          /tmp/check/bin/today where
+          # The static assets must ship as package data, or the UI 404s.
+          /tmp/check/bin/python - <<'PY'
+          from today_dashboard import server
+          names = sorted(p.name for p in server.STATIC_DIR.iterdir())
+          assert names == ["app.js", "index.html", "settings.js", "styles.css"], names
+          print("static assets present in the wheel:", names)
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+
+  # Publishing to PyPI is opt-in. To turn it on:
+  #   1. Create the project on PyPI.
+  #   2. Add a Trusted Publisher for this repo and the "pypi" environment
+  #      (PyPI → your project → Publishing). No API token to store.
+  #   3. Create a "pypi" environment in this repo's settings.
+  #   4. Delete the `if: false` line below.
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    if: false
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1

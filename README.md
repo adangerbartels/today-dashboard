@@ -24,7 +24,7 @@ connect anything, so you can see whether you want it before setting it up.
 Prefer a clone? That works identically, with nothing to install:
 
 ```bash
-git clone https://github.com/OWNER/today-dashboard && cd today-dashboard
+git clone https://github.com/adangerbartels/today-dashboard && cd today-dashboard
 python3 today.py
 ```
 
@@ -267,6 +267,43 @@ letting the save vanish into a void.
 | `f` | Cycle the PR filter (All / To review / Mine) |
 | `s` | Open the connections wizard |
 | `Esc` | Close the wizard, or leave a text field |
+
+## Running it as a service
+
+To have Today start at boot and stay up until you stop it:
+
+```bash
+./packaging/install-service.sh
+```
+
+That installs a systemd **user** service — the right shape here, since the
+config holds your personal tokens under your own home directory and the server
+only binds localhost. Nothing runs as root.
+
+The one privileged step is enabling *lingering* for your account, which is what
+lets a user service start at boot and outlive logout. The script does it with
+`sudo` and tells you if it couldn't; without it the service still runs, just only
+while you're logged in.
+
+```bash
+systemctl --user status today.service      # is it up
+journalctl --user -u today.service -f      # follow the logs
+systemctl --user restart today.service     # after editing config by hand
+./packaging/install-service.sh --uninstall  # stop, disable, remove
+```
+
+`--port` and `--host` are passed through if you need something other than
+`127.0.0.1:8787`. Note that the Google OAuth redirect is derived from the port, so
+changing it means reconnecting Google.
+
+The unit restarts on failure, is sandboxed (`ProtectSystem=strict`,
+`ProtectHome=read-only` with only your config directory writable, no
+capabilities, syscall-filtered), and is rate-limited so a permanent problem — a
+port already in use, say — doesn't turn into a restart loop.
+
+On macOS, launchd is the equivalent; there's a template at
+[`packaging/com.today.dashboard.plist`](packaging/com.today.dashboard.plist).
+It's a contributed convenience and hasn't been verified on a Mac.
 
 ## Commands
 

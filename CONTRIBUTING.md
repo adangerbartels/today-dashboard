@@ -3,7 +3,7 @@
 ## Getting set up
 
 ```bash
-git clone https://github.com/OWNER/today-dashboard && cd today-dashboard
+git clone https://github.com/adangerbartels/today-dashboard && cd today-dashboard
 PYTHONPATH=src python3 -m unittest discover -s tests -t tests
 ```
 

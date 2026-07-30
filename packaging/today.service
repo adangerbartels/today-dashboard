@@ -1,0 +1,47 @@
+[Unit]
+Description=Today — personal work dashboard
+Documentation=https://github.com/adangerbartels/today-dashboard
+# Outbound API calls need routable networking, not just an interface.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+WorkingDirectory=__DIR__
+Environment=TODAY_HOME=__HOME__
+Environment=PYTHONUNBUFFERED=1
+# --host is stated here as well as in config.json so the unit itself makes the
+# localhost-only guarantee obvious.
+ExecStart=__PYTHON__ __EXEC__ serve --host __HOST__ --port __PORT__
+Restart=always
+RestartSec=5s
+# Don't thrash if something is permanently wrong, e.g. the port is taken.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# --- hardening ------------------------------------------------------------
+# It needs its own config directory and outbound HTTPS. Nothing else.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=__HOME__
+ProtectClock=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=default.target

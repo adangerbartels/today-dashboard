@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  launchd equivalent of packaging/today.service, for macOS.
+
+  UNVERIFIED: the systemd path is the one that has actually been tested. This is
+  offered as a starting point; corrections welcome.
+
+  Install:
+    sed -e "s|__DIR__|$PWD|g" -e "s|__PYTHON__|$(command -v python3)|g" \
+        packaging/com.today.dashboard.plist \
+        > ~/Library/LaunchAgents/com.today.dashboard.plist
+    launchctl load -w ~/Library/LaunchAgents/com.today.dashboard.plist
+
+  Remove:
+    launchctl unload -w ~/Library/LaunchAgents/com.today.dashboard.plist
+    rm ~/Library/LaunchAgents/com.today.dashboard.plist
+
+  A LaunchAgent runs as you, at login, which matches the systemd user service.
+  macOS has no direct equivalent of lingering: an agent starts when you log in,
+  not at boot. Use a LaunchDaemon only if you genuinely need pre-login startup,
+  and be aware it runs as root unless you set UserName.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.today.dashboard</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>__PYTHON__</string>
+    <string>__DIR__/today.py</string>
+    <string>serve</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>8787</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>__DIR__</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TODAY_HOME</key>
+    <string>__DIR__</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>__DIR__/data/today.log</string>
+  <key>StandardErrorPath</key>
+  <string>__DIR__/data/today.log</string>
+</dict>
+</plist>
