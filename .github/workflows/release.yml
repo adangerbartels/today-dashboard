@@ -41,6 +41,10 @@ jobs:
           PY
 
       - name: Run the tests before shipping anything
+        # Against src/, since nothing is built or installed at this point. The
+        # built wheel gets exercised separately below.
+        env:
+          PYTHONPATH: src
         run: python -m unittest discover -s tests -t tests
 
       - name: Build sdist and wheel
