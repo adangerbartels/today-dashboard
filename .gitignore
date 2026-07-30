@@ -1,0 +1,16 @@
+# Secrets — never commit
+config.json
+.env
+
+# Local state: your todos, "last seen" baselines, config snapshots
+data/
+backups/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/

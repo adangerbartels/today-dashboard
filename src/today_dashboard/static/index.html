@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Today</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>✓</text></svg>">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <h1>Today</h1>
+        <p class="date" id="today-date"></p>
+      </div>
+      <div class="topbar-actions">
+        <span class="freshness" id="freshness" aria-live="polite"></span>
+        <button type="button" class="btn btn-quiet" id="refresh" title="Refresh (r)">
+          <svg viewBox="0 0 16 16" aria-hidden="true" class="icon"><path d="M13.65 3.35A6 6 0 1 0 14 8h-1.5a4.5 4.5 0 1 1-1.31-3.19H9v1.5h5v-5h-1.5v1.04z"/></svg>
+          <span>Refresh</span>
+        </button>
+        <button type="button" class="btn btn-quiet" id="open-settings"
+                title="Connections (s)" aria-label="Connections">
+          <svg viewBox="0 0 16 16" aria-hidden="true" class="icon"><path d="M8 10.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm6.4-1.1l-1.1-.6a5.4 5.4 0 0 0 0-1.6l1.1-.6a.6.6 0 0 0 .2-.8l-1-1.7a.6.6 0 0 0-.8-.2l-1.1.6a5.5 5.5 0 0 0-1.4-.8V2.4a.6.6 0 0 0-.6-.6H7.3a.6.6 0 0 0-.6.6v1.3c-.5.2-1 .5-1.4.8l-1.1-.6a.6.6 0 0 0-.8.2l-1 1.7a.6.6 0 0 0 .2.8l1.1.6a5.4 5.4 0 0 0 0 1.6l-1.1.6a.6.6 0 0 0-.2.8l1 1.7a.6.6 0 0 0 .8.2l1.1-.6c.4.3.9.6 1.4.8v1.3a.6.6 0 0 0 .6.6h1.4a.6.6 0 0 0 .6-.6v-1.3c.5-.2 1-.5 1.4-.8l1.1.6a.6.6 0 0 0 .8-.2l1-1.7a.6.6 0 0 0-.2-.8z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <main class="lanes">
+    <!-- Google Calendar -->
+    <section class="lane" aria-labelledby="lane-cal-title">
+      <div class="lane-head">
+        <h2 id="lane-cal-title">Rest of today</h2>
+        <span class="count" id="cal-count">0</span>
+        <span class="lane-source">Calendar</span>
+      </div>
+      <div class="lane-body" id="cal-body"></div>
+    </section>
+
+    <!-- CaterCow -->
+    <section class="lane" aria-labelledby="lane-lunch-title">
+      <div class="lane-head">
+        <h2 id="lane-lunch-title">Lunch to pick</h2>
+        <span class="count" id="lunch-count">0</span>
+        <span class="lane-source">CaterCow</span>
+      </div>
+      <div class="lane-body" id="lunch-body"></div>
+    </section>
+
+    <!-- Local todos -->
+    <section class="lane" aria-labelledby="lane-todos-title">
+      <div class="lane-head">
+        <h2 id="lane-todos-title">To do</h2>
+        <span class="count" id="todos-count">0</span>
+      </div>
+
+      <form class="add-form" id="add-form" autocomplete="off">
+        <input type="text" id="add-input" placeholder="Add a task…  (n)"
+               aria-label="New task" maxlength="500">
+        <button type="submit" class="btn btn-accent" aria-label="Add task">Add</button>
+      </form>
+
+      <div class="progress" id="todos-progress" hidden>
+        <div class="progress-bar"><div class="progress-fill" id="todos-fill"></div></div>
+        <span class="progress-label" id="todos-progress-label"></span>
+      </div>
+
+      <div class="lane-body" id="todos-body"></div>
+
+      <div class="done-block" id="done-block" hidden>
+        <button type="button" class="done-toggle" id="done-toggle" aria-expanded="false">
+          <svg viewBox="0 0 16 16" aria-hidden="true" class="icon chevron"><path d="M6 4l4 4-4 4z"/></svg>
+          <span id="done-toggle-label">Done</span>
+        </button>
+        <div class="lane-body done-body" id="done-body" hidden></div>
+        <button type="button" class="btn btn-quiet btn-sm" id="clear-done" hidden>Clear completed</button>
+      </div>
+    </section>
+
+    <!-- Jira -->
+    <section class="lane" aria-labelledby="lane-jira-title">
+      <div class="lane-head">
+        <h2 id="lane-jira-title">In progress</h2>
+        <span class="count" id="jira-count">0</span>
+        <span class="lane-source">Jira</span>
+      </div>
+      <div class="lane-body" id="jira-body"></div>
+    </section>
+
+    <!-- GitHub -->
+    <section class="lane" aria-labelledby="lane-github-title">
+      <div class="lane-head">
+        <h2 id="lane-github-title">Needs attention</h2>
+        <span class="count" id="github-count">0</span>
+        <span class="lane-source">GitHub</span>
+      </div>
+      <div class="filters" id="github-filters" role="group" aria-label="Filter pull requests">
+        <button type="button" class="filter is-active" data-filter="all">All</button>
+        <button type="button" class="filter" data-filter="reviews">To review</button>
+        <button type="button" class="filter" data-filter="mine">Mine</button>
+      </div>
+      <div class="lane-body" id="github-body"></div>
+    </section>
+
+    <!-- Gmail -->
+    <section class="lane" aria-labelledby="lane-mail-title">
+      <div class="lane-head">
+        <h2 id="lane-mail-title">Unread mail</h2>
+        <span class="count" id="mail-count">0</span>
+        <span class="lane-source">Gmail</span>
+      </div>
+      <div class="lane-body" id="mail-body"></div>
+    </section>
+
+    <!-- Slack -->
+    <section class="lane" aria-labelledby="lane-slack-title">
+      <div class="lane-head">
+        <h2 id="lane-slack-title">Slack</h2>
+        <span class="count" id="slack-count">0</span>
+        <span class="lane-source" id="slack-source">Slack</span>
+      </div>
+      <div class="lane-body" id="slack-body"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span><kbd>n</kbd> new task</span>
+    <span><kbd>r</kbd> refresh</span>
+    <span><kbd>f</kbd> cycle PR filter</span>
+    <span><kbd>s</kbd> connections</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Setup wizard ─────────────────────────────────────────────────── -->
+  <dialog class="modal" id="settings" aria-labelledby="settings-title">
+    <div class="modal-head">
+      <div>
+        <h2 id="settings-title">Connections</h2>
+        <p class="modal-sub" id="settings-path"></p>
+      </div>
+      <button type="button" class="icon-btn modal-x" id="close-settings" aria-label="Close">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M12.4 4.7l-1.1-1.1L8 6.9 4.7 3.6 3.6 4.7 6.9 8l-3.3 3.3 1.1 1.1L8 9.1l3.3 3.3 1.1-1.1L9.1 8z"/></svg>
+      </button>
+    </div>
+
+    <!-- Jira ------------------------------------------------------------ -->
+    <section class="conn" data-source="jira">
+      <header class="conn-head">
+        <h3>Jira</h3>
+        <span class="conn-status" data-role="status">Checking…</span>
+      </header>
+
+      <div class="field">
+        <label for="jira-base-url">Site URL</label>
+        <input id="jira-base-url" name="base_url" type="url" spellcheck="false"
+               autocomplete="off" placeholder="https://your-org.atlassian.net">
+      </div>
+
+      <div class="field">
+        <label for="jira-email">Email</label>
+        <input id="jira-email" name="email" type="email" spellcheck="false"
+               autocomplete="off" placeholder="you@your-org.com">
+        <p class="field-hint">Leave blank for Jira Server / Data Center — the token
+          is then sent as a bearer token.</p>
+      </div>
+
+      <div class="field">
+        <label for="jira-token">API token
+          <a class="field-link" target="_blank" rel="noopener noreferrer"
+             href="https://id.atlassian.com/manage-profile/security/api-tokens">Create one ↗</a>
+        </label>
+        <div class="secret">
+          <input id="jira-token" name="api_token" type="password" autocomplete="off"
+                 spellcheck="false" placeholder="Paste your API token">
+          <button type="button" class="btn btn-sm reveal" data-role="reveal"
+                  aria-label="Show token">Show</button>
+        </div>
+      </div>
+
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="field">
+          <label for="jira-jql">JQL</label>
+          <textarea id="jira-jql" name="jql" rows="3" spellcheck="false"></textarea>
+          <p class="field-hint">Which issues land in the “In progress” lane.</p>
+        </div>
+      </details>
+
+      <div class="conn-result" data-role="result" hidden></div>
+
+      <div class="conn-actions">
+        <button type="button" class="btn btn-accent" data-role="save">Test &amp; save</button>
+        <button type="button" class="btn" data-role="test">Test only</button>
+        <button type="button" class="btn btn-quiet" data-role="disconnect" hidden>Disconnect</button>
+      </div>
+    </section>
+
+    <!-- GitHub ---------------------------------------------------------- -->
+    <section class="conn" data-source="github">
+      <header class="conn-head">
+        <h3>GitHub</h3>
+        <span class="conn-status" data-role="status">Checking…</span>
+      </header>
+
+      <div class="field">
+        <label for="gh-token">Personal access token
+          <a class="field-link" target="_blank" rel="noopener noreferrer"
+             href="https://github.com/settings/tokens">Create one ↗</a>
+        </label>
+        <div class="secret">
+          <input id="gh-token" name="token" type="password" autocomplete="off"
+                 spellcheck="false" placeholder="ghp_… or github_pat_…">
+          <button type="button" class="btn btn-sm reveal" data-role="reveal"
+                  aria-label="Show token">Show</button>
+        </div>
+        <p class="field-hint">For work across <strong>several organizations</strong>, use a
+          <strong>classic</strong> token with <code>repo</code> and <code>read:org</code> —
+          a fine-grained token only ever covers one owner. Orgs enforcing SAML SSO
+          also need the token authorized via <strong>Configure SSO</strong>.</p>
+      </div>
+
+      <div class="orgs" data-role="picker" hidden>
+        <p class="orgs-head">
+          Organizations
+          <button type="button" class="orgs-toggle" data-role="picker-all">Select all</button>
+        </p>
+        <div class="orgs-list" data-role="picker-list"></div>
+        <p class="field-hint">Unchecked owners are left out of the lane. Checking none
+          includes everything this token can see.</p>
+      </div>
+
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="field">
+          <label for="gh-extra">Extra search qualifiers</label>
+          <input id="gh-extra" name="extra_query" spellcheck="false" autocomplete="off"
+                 placeholder="-repo:acme/legacy label:urgent">
+          <p class="field-hint">Appended to both PR searches to narrow the feed.</p>
+        </div>
+      </details>
+
+      <div class="conn-result" data-role="result" hidden></div>
+      <div class="conn-notes" data-role="notes" hidden></div>
+
+      <div class="conn-actions">
+        <button type="button" class="btn btn-accent" data-role="save">Test &amp; save</button>
+        <button type="button" class="btn" data-role="test">Test only</button>
+        <button type="button" class="btn btn-quiet" data-role="disconnect" hidden>Disconnect</button>
+      </div>
+    </section>
+
+    <!-- Google (Calendar + Gmail) --------------------------------------- -->
+    <section class="conn" data-source="google">
+      <header class="conn-head">
+        <h3>Google</h3>
+        <span class="conn-status" data-role="status">Checking…</span>
+      </header>
+      <p class="conn-blurb">Calendar and Gmail share one sign-in. Read-only access.</p>
+
+      <div class="field">
+        <label for="g-client-id">OAuth client ID
+          <a class="field-link" target="_blank" rel="noopener noreferrer"
+             href="https://console.cloud.google.com/apis/credentials">Google Cloud ↗</a>
+        </label>
+        <input id="g-client-id" name="client_id" spellcheck="false" autocomplete="off"
+               placeholder="1234-abc.apps.googleusercontent.com">
+      </div>
+
+      <div class="field">
+        <label for="g-client-secret">Client secret</label>
+        <div class="secret">
+          <input id="g-client-secret" name="client_secret" type="password"
+                 autocomplete="off" spellcheck="false" placeholder="GOCSPX-…">
+          <button type="button" class="btn btn-sm reveal" data-role="reveal"
+                  aria-label="Show client secret">Show</button>
+        </div>
+      </div>
+
+      <details class="advanced">
+        <summary>How to get these</summary>
+        <ol class="steps">
+          <li>In Google Cloud, enable the <strong>Gmail API</strong> and
+            <strong>Google Calendar API</strong>.</li>
+          <li>Create credentials → OAuth client ID → application type
+            <strong>Desktop app</strong>. Desktop clients accept any loopback
+            redirect, so there's nothing to register.</li>
+          <li>If the consent screen is in testing mode, add your own address
+            under <strong>Test users</strong>.</li>
+        </ol>
+        <p class="field-hint">Redirect this app will use:
+          <code data-role="redirect">…</code></p>
+      </details>
+
+      <div class="orgs" data-role="picker" hidden>
+        <p class="orgs-head">
+          Calendars
+          <button type="button" class="orgs-toggle" data-role="picker-all">Select all</button>
+        </p>
+        <div class="orgs-list" data-role="picker-list"></div>
+        <p class="field-hint">Only checked calendars feed the schedule lane.</p>
+      </div>
+
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="field">
+          <label for="g-gmail-query">Gmail search</label>
+          <textarea id="g-gmail-query" name="gmail_query" rows="3" spellcheck="false"></textarea>
+          <p class="field-hint"><code>category:primary</code> is what excludes
+            promotions, social, updates and forums. Leave blank for the default.</p>
+        </div>
+      </details>
+
+      <div class="conn-result" data-role="result" hidden></div>
+      <div class="conn-notes" data-role="notes" hidden></div>
+
+      <div class="conn-actions">
+        <button type="button" class="btn btn-accent" data-role="connect">Connect with Google</button>
+        <button type="button" class="btn btn-accent" data-role="save" hidden>Test &amp; save</button>
+        <button type="button" class="btn" data-role="test" hidden>Test only</button>
+        <button type="button" class="btn btn-quiet" data-role="disconnect" hidden>Disconnect</button>
+      </div>
+    </section>
+
+    <!-- Slack ----------------------------------------------------------- -->
+    <section class="conn" data-source="slack">
+      <header class="conn-head">
+        <h3>Slack</h3>
+        <span class="conn-status" data-role="status">Checking…</span>
+      </header>
+
+      <div class="field">
+        <label for="slack-token">User token
+          <a class="field-link" target="_blank" rel="noopener noreferrer"
+             href="https://api.slack.com/apps">Slack apps ↗</a>
+        </label>
+        <div class="secret">
+          <input id="slack-token" name="token" type="password" autocomplete="off"
+                 spellcheck="false" placeholder="xoxp-…">
+          <button type="button" class="btn btn-sm reveal" data-role="reveal"
+                  aria-label="Show token">Show</button>
+        </div>
+        <p class="field-hint">Use a <strong>user</strong> token (<code>xoxp-</code> or
+          <code>xoxe.xoxp-</code>) — only that knows what you've read. Scopes:
+          <code>channels:read</code>, <code>groups:read</code>,
+          <code>channels:history</code>, <code>groups:history</code>.</p>
+      </div>
+
+      <details class="advanced" id="slack-rotation">
+        <summary>Token rotation</summary>
+        <p class="field-hint">Tokens beginning <code>xoxe.xoxp-</code> expire after
+          <strong>12 hours</strong>. Fill these in and the app renews itself; leave
+          them blank and you'll be pasting a new token twice a day. Client ID and
+          secret are on your app's <strong>Basic Information</strong> page.</p>
+
+        <div class="field">
+          <label for="slack-refresh">Refresh token</label>
+          <div class="secret">
+            <input id="slack-refresh" name="refresh_token" type="password"
+                   autocomplete="off" spellcheck="false" placeholder="xoxe-1-…">
+            <button type="button" class="btn btn-sm reveal" data-role="reveal-2"
+                    aria-label="Show refresh token">Show</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="slack-client-id">Client ID</label>
+          <input id="slack-client-id" name="client_id" spellcheck="false"
+                 autocomplete="off" placeholder="1234567890.1234567890">
+        </div>
+
+        <div class="field">
+          <label for="slack-client-secret">Client secret</label>
+          <div class="secret">
+            <input id="slack-client-secret" name="client_secret" type="password"
+                   autocomplete="off" spellcheck="false" placeholder="••••••••">
+            <button type="button" class="btn btn-sm reveal" data-role="reveal-3"
+                    aria-label="Show client secret">Show</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="orgs" data-role="picker" hidden>
+        <p class="orgs-head">
+          Important channels
+          <button type="button" class="orgs-toggle" data-role="picker-all">Select all</button>
+        </p>
+        <div class="orgs-list" data-role="picker-list"></div>
+        <p class="field-hint">Only checked channels are counted — that's the filter
+          that keeps this lane focused.</p>
+      </div>
+
+      <div class="conn-result" data-role="result" hidden></div>
+      <div class="conn-notes" data-role="notes" hidden></div>
+
+      <div class="conn-actions">
+        <button type="button" class="btn btn-accent" data-role="save">Test &amp; save</button>
+        <button type="button" class="btn" data-role="test">Test only</button>
+        <button type="button" class="btn btn-quiet" data-role="disconnect" hidden>Disconnect</button>
+      </div>
+    </section>
+
+    <!-- CaterCow --------------------------------------------------------- -->
+    <section class="conn" data-source="catercow">
+      <header class="conn-head">
+        <h3>CaterCow</h3>
+        <span class="conn-status" data-role="status">Checking…</span>
+      </header>
+      <p class="conn-blurb">CaterCow has no public API, so selections are inferred:
+        from confirmation emails, a signed-in page, or both.</p>
+
+      <div class="orgs">
+        <p class="orgs-head">Days needing a selection</p>
+        <div class="weekdays" id="lunch-weekdays">
+          <label><input type="checkbox" data-weekday="0"><span>Mon</span></label>
+          <label><input type="checkbox" data-weekday="1"><span>Tue</span></label>
+          <label><input type="checkbox" data-weekday="2"><span>Wed</span></label>
+          <label><input type="checkbox" data-weekday="3"><span>Thu</span></label>
+          <label><input type="checkbox" data-weekday="4"><span>Fri</span></label>
+          <label><input type="checkbox" data-weekday="5"><span>Sat</span></label>
+          <label><input type="checkbox" data-weekday="6"><span>Sun</span></label>
+        </div>
+        <p class="field-hint" id="lunch-email-state"></p>
+      </div>
+
+      <div class="field">
+        <label for="cc-horizon">Look ahead</label>
+        <div class="secret">
+          <input id="cc-horizon" name="horizon_days" type="number" min="1" max="60"
+                 inputmode="numeric">
+          <span class="suffix">days</span>
+        </div>
+      </div>
+
+      <details class="advanced">
+        <summary>Session cookie (optional)</summary>
+        <p class="field-hint">Only needed if you'd rather read the site than your
+          email. Sign in at catercow.com, open DevTools → Application → Cookies,
+          and copy the whole cookie header. It's a full credential for your
+          account and <strong>expires when the session does</strong>.</p>
+        <div class="field">
+          <label for="cc-cookie">Cookie</label>
+          <div class="secret">
+            <input id="cc-cookie" name="cookie" type="password" autocomplete="off"
+                   spellcheck="false" placeholder="_catercow_session=…">
+            <button type="button" class="btn btn-sm reveal" data-role="reveal"
+                    aria-label="Show cookie">Show</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cc-orders-path">Page to read</label>
+          <input id="cc-orders-path" name="orders_path" spellcheck="false"
+                 autocomplete="off" placeholder="/orders">
+        </div>
+        <div class="conn-actions">
+          <button type="button" class="btn btn-sm" data-role="probe">Inspect that page</button>
+        </div>
+        <div class="conn-result" data-role="probe-result" hidden></div>
+      </details>
+
+      <details class="advanced">
+        <summary>Advanced</summary>
+        <div class="field">
+          <label for="cc-email-query">Confirmation email search</label>
+          <textarea id="cc-email-query" name="email_query" rows="2" spellcheck="false"></textarea>
+          <p class="field-hint">Matches subjects like “Your meal selection on
+            Monday 8/3 is confirmed”. Headers only — bodies are never read.</p>
+        </div>
+        <div class="field">
+          <label for="cc-pattern">Page date pattern</label>
+          <textarea id="cc-pattern" name="selected_pattern" rows="2" spellcheck="false"
+                    placeholder="leave blank for the default"></textarea>
+          <p class="field-hint">Regex with <code>month</code> and <code>day</code>
+            named groups, for the cookie route.</p>
+        </div>
+      </details>
+
+      <div class="conn-result" data-role="result" hidden></div>
+      <div class="conn-notes" data-role="notes" hidden></div>
+
+      <div class="conn-actions">
+        <button type="button" class="btn btn-accent" data-role="save">Test &amp; save</button>
+        <button type="button" class="btn" data-role="test">Test only</button>
+        <button type="button" class="btn btn-quiet" data-role="disconnect" hidden>Clear cookie</button>
+      </div>
+    </section>
+
+    <p class="modal-foot">
+      Tokens are written to <code id="settings-path-inline">config.json</code> with
+      owner-only permissions and are never sent back to this page.
+    </p>
+  </dialog>
+
+  <script src="/app.js"></script>
+  <script src="/settings.js"></script>
+</body>
+</html>

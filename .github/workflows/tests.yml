@@ -1,0 +1,75 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Confirm there is nothing to install
+        run: |
+          # The empty dependency list is a feature; fail loudly if one appears.
+          python - <<'PY'
+          import pathlib, re
+          text = pathlib.Path("pyproject.toml").read_text()
+          block = re.search(r"^dependencies = \[(.*?)\]", text, re.S | re.M)
+          assert block and not block.group(1).strip(), "Today must stay dependency-free"
+          print("dependencies: none")
+          PY
+
+      - name: Install
+        run: python -m pip install --quiet .
+
+      - name: Run tests against the installed package
+        run: python -m unittest discover -s tests -t tests -v
+
+      - name: Console script works
+        run: |
+          today --version
+          today where
+
+      - name: Config never resolves into the package directory
+        run: |
+          cd "$(mktemp -d)"
+          python - <<'PY'
+          from today_dashboard import config
+          path = str(config.CONFIG_PATH)
+          assert "site-packages" not in path, path
+          assert "today_dashboard" not in path, path
+          print("config path is outside the package:", path)
+          PY
+
+      - name: Server starts and serves the dashboard
+        run: |
+          cd "$(mktemp -d)"
+          today serve --port 8791 &
+          for _ in $(seq 1 40); do
+            sleep 0.25
+            curl -fsS "http://127.0.0.1:8791/api/items" > items.json && break
+          done
+          python - <<'PY'
+          import json
+          feed = json.load(open("items.json"))
+          for source in ("jira", "github", "gcal", "gmail", "slack", "catercow"):
+              assert source in feed, source
+          assert feed["demo"] is True, "an unconfigured run must serve demo data"
+          print("all lanes present, demo mode confirmed")
+          PY
+          curl -fsS "http://127.0.0.1:8791/" | grep -q "Today" && echo "index served"

@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "today",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "today.py"
+      ],
+      "port": 8787
+    }
+  ]
+}

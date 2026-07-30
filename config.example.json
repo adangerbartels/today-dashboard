@@ -1,0 +1,71 @@
+{
+  "_comment": "Copy to config.json and fill in. config.json is gitignored. Every value can also be set by env var (see README).",
+
+  "jira": {
+    "base_url": "https://your-org.atlassian.net",
+    "email": "you@your-org.com",
+    "api_token": "",
+    "jql": "assignee = currentUser() AND statusCategory = \"In Progress\" ORDER BY updated DESC",
+    "max_results": 50
+  },
+
+  "github": {
+    "token": "",
+    "extra_query": "",
+    "orgs": [],
+    "include_drafts": false,
+    "max_results": 50,
+    "rules": {
+      "review_requested": true,
+      "ci_failing": true,
+      "changes_requested": true,
+      "conflicts": true,
+      "ready_to_merge": true,
+      "new_activity": true
+    }
+  },
+
+  "google": {
+    "_comment": "Calendar + Gmail share one OAuth connection. refresh_token is written by the wizard after you sign in — don't paste it by hand.",
+    "client_id": "",
+    "client_secret": "",
+    "refresh_token": "",
+    "gmail_query": "",
+    "gmail_max": 50,
+    "calendar_ids": ["primary"],
+    "include_all_day": true,
+    "skip_declined": true,
+    "max_events": 20
+  },
+
+  "slack": {
+    "_comment": "Use a user token (xoxp- or xoxe.xoxp-); only that has your read state. channels holds the IDs you marked important.",
+    "token": "",
+    "channels": [],
+
+    "_rotation": "Only needed for xoxe.xoxp- tokens, which expire after 12 hours. With these three set the app renews itself; expires_at is maintained for you.",
+    "refresh_token": "",
+    "client_id": "",
+    "client_secret": "",
+    "expires_at": 0
+  },
+
+  "catercow": {
+    "_comment": "No public API. Selections are inferred from confirmation emails (needs the Google connection; subjects only) and/or a signed-in page fetched with a session cookie.",
+    "cookie": "",
+    "base_url": "https://www.catercow.com",
+    "orders_path": "",
+    "selected_pattern": "",
+    "use_email": true,
+    "email_query": "",
+    "_lunch_days": "0 = Monday. Weekdays that expect a selection.",
+    "lunch_days": [0, 1, 2, 3, 4],
+    "horizon_days": 14
+  },
+
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8787,
+    "cache_ttl_seconds": 60
+  }
+}
