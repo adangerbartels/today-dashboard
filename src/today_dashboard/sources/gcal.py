@@ -5,7 +5,7 @@ is at or after timeMin, so anything finished drops out while a meeting you're
 currently in stays.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib.parse import quote
 
 from . import google_auth

@@ -16,10 +16,10 @@ not selected, which is exactly the question being asked.
 """
 
 import re
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from . import google_auth
-from .http_json import ApiError, request_json
+from .http_json import ApiError
 
 GMAIL_LIST = "https://www.googleapis.com/gmail/v1/users/me/messages"
 GMAIL_MSG = "https://www.googleapis.com/gmail/v1/users/me/messages/{}"
@@ -309,11 +309,10 @@ def probe(cfg):
         ) if needle in html
     ]
 
-    default_hits, _ = 0, None
     try:
         default_hits = len(re.findall(DEFAULT_HTML_PATTERN, html, re.I | re.S))
     except re.error:
-        pass
+        default_hits = 0
 
     return {
         "final_url": final_url,

@@ -4,10 +4,9 @@
     {
       "name": "today",
       "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "today.py"
-      ],
-      "port": 8787
+      "runtimeArgs": ["today.py"],
+      "port": 8787,
+      "autoPort": false
     }
   ]
 }
