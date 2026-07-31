@@ -3,4 +3,4 @@
 Standard library only. See ``cli.py`` for the entry points.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"

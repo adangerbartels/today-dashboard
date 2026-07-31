@@ -52,6 +52,28 @@ jobs:
           python -m pip install --quiet build
           python -m build
 
+      - name: Verify the sdist is complete and its own tests run
+        run: |
+          # v1.0.0 shipped an sdist missing today.py, packaging/ and
+          # tests/support.py. Testing the git checkout can't catch that; only
+          # unpacking what actually ships can.
+          rm -rf /tmp/sdist && mkdir -p /tmp/sdist
+          tar -xzf dist/*.tar.gz -C /tmp/sdist --strip-components=1
+          cd /tmp/sdist
+          missing=0
+          for f in README.md LICENSE CONTRIBUTING.md SECURITY.md \
+                   config.example.json today.py \
+                   packaging/install-service.sh packaging/today.service \
+                   tests/support.py; do
+            if [ ! -f "$f" ]; then echo "sdist is missing $f"; missing=1; fi
+          done
+          [ "$missing" = 0 ] || exit 1
+          echo "sdist contains everything the documentation references"
+          # The shipped tests must run from the shipped tree, not just from git.
+          PYTHONPATH=src python -m unittest discover -s tests -t tests
+          # And the documented clone-and-run entry point must work.
+          python today.py --version
+
       - name: Verify the wheel actually installs and runs
         run: |
           python -m venv /tmp/check

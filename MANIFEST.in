@@ -1,0 +1,23 @@
+# setuptools' sdist defaults miss anything that isn't a package, metadata file,
+# or a test_*.py. That silently shipped a v1.0.0 sdist with no today.py, no
+# packaging/, no config.example.json, and — worse — a tests/ directory without
+# tests/support.py, so the included tests could not import.
+#
+# release.yml unpacks the sdist and runs its tests, so a regression here fails
+# the release rather than shipping.
+
+include today.py
+include config.example.json
+include CONTRIBUTING.md
+include SECURITY.md
+include LICENSE
+include MANIFEST.in
+
+recursive-include packaging *
+recursive-include tests *.py *.md
+recursive-include src/today_dashboard/static *
+
+# Not useful inside a source distribution.
+prune .github
+prune .claude
+global-exclude __pycache__ *.py[cod]
