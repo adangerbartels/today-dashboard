@@ -60,9 +60,15 @@ if command -v today >/dev/null 2>&1; then
   PYTHON="$(command -v today)"
   EXEC=""
 else
-  PYTHON="$(command -v python3)" || die "python3 not found"
+  command -v python3 >/dev/null || die "python3 not found"
+  # Resolve to the real interpreter, not a version-manager shim. A pyenv or asdf
+  # shim would leave a long-running service silently following whatever the
+  # global version happens to be, and break outright if the manager moved.
+  PYTHON="$(python3 -c 'import sys; print(sys.executable)')"
+  [ -x "$PYTHON" ] || PYTHON="$(command -v python3)"
   EXEC="$REPO/today.py"
 fi
+echo "Interpreter: $PYTHON"
 
 # Where config.json, data/ and backups/ live. An existing config next to the
 # checkout wins, so an established setup keeps working untouched.
